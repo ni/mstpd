@@ -40,6 +40,12 @@ struct epoll_event_handler
                                    so mark that ref as NULL while freeing */
 };
 
+int epoll_timer_init(struct epoll_event_handler* timer);
+void epoll_timer_close(struct epoll_event_handler* timer);
+void epoll_timer_start(struct epoll_event_handler* timer, int seconds);
+int epoll_timer_expired(struct epoll_event_handler* timer);
+int epoll_timer_active(struct epoll_event_handler* timer);
+
 int init_epoll(void);
 
 void clear_epoll(void);

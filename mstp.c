@@ -5067,6 +5067,27 @@ static bool __br_state_machines_run(bridge_t *br, bool dry_run)
     port_t *prt;
     per_tree_port_t *ptp;
     tree_t *tree;
+    bool a_port_is_forwarding;
+
+    /* Log state of each port */
+    FOREACH_PORT_IN_BRIDGE(prt, br)
+    {
+        FOREACH_PTP_IN_PORT(ptp, prt)
+        {
+                char* rolesz;
+                switch(ptp->role) {
+                case roleDisabled: rolesz = "Disabled"; break;
+                case roleRoot: rolesz = "Root"; break;
+                case roleDesignated: rolesz = "Designated"; break;
+                case roleAlternate: rolesz = "Alternate"; break;
+                default: rolesz = "Other";
+                }
+                INFO_BRNAME(br, "Role: %s, learn: %s, forward: %s",
+                            rolesz,
+                            ptp->learn ? "TRUE" : "FALSE",
+                            ptp->forward ? "TRUE" : "FALSE");
+        }
+    }
 
     /* Check if bridge assurance timer expires */
     FOREACH_PORT_IN_BRIDGE(prt, br)
@@ -5149,6 +5170,21 @@ static bool __br_state_machines_run(bridge_t *br, bool dry_run)
         {
             if(TCSM_run(ptp, dry_run) && dry_run)
                 return true;
+        }
+    }
+
+    /* sanity check that only one port is forwarding */
+    a_port_is_forwarding = false;
+    FOREACH_PORT_IN_BRIDGE(prt, br)
+    {
+        FOREACH_PTP_IN_PORT(ptp, prt)
+        {
+                if(ptp->forwarding) {
+                        if(a_port_is_forwarding) {
+                                ERROR_BRNAME(br, "more than one port forwarding");
+                        }
+                        a_port_is_forwarding = true;
+                }
         }
     }
 
